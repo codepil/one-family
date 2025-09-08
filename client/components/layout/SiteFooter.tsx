@@ -14,10 +14,10 @@ export default function SiteFooter() {
         <div>
           <h4 className="text-sm font-semibold">Features</h4>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            <li>Member blogs</li>
-            <li>Event invites & groups</li>
-            <li>AI summaries</li>
-            <li>Interactive family tree</li>
+            <li><a href="/blogs" className="hover:underline">Member blogs</a></li>
+            <li><a href="/events" className="hover:underline">Event invites & groups</a></li>
+            <li><a href="/#ai" className="hover:underline">AI summaries</a></li>
+            <li><a href="/family-tree" className="hover:underline">Interactive family tree</a></li>
           </ul>
         </div>
         <div>
