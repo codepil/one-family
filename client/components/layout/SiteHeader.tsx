@@ -37,10 +37,20 @@ export default function SiteHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm" aria-label="Plan for Event">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            aria-label="Plan for Event"
+          >
             <Link to="/events">Plan for Event</Link>
           </Button>
-          <Button asChild size="sm" className="hidden sm:inline-flex" aria-label="Join Family">
+          <Button
+            asChild
+            size="sm"
+            className="hidden sm:inline-flex"
+            aria-label="Join Family"
+          >
             <Link to="/family-tree">Join Family</Link>
           </Button>
         </div>

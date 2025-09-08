@@ -8,16 +8,33 @@ export default function SiteFooter() {
             <span className="font-semibold">Kinfolk</span>
           </a>
           <p className="mt-3 text-sm text-muted-foreground max-w-sm">
-            Your private home for stories, events, memories, and the family tree.
+            Your private home for stories, events, memories, and the family
+            tree.
           </p>
         </div>
         <div>
           <h4 className="text-sm font-semibold">Features</h4>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            <li><a href="/blogs" className="hover:underline">Member blogs</a></li>
-            <li><a href="/events" className="hover:underline">Event invites & groups</a></li>
-            <li><a href="/#ai" className="hover:underline">AI summaries</a></li>
-            <li><a href="/family-tree" className="hover:underline">Interactive family tree</a></li>
+            <li>
+              <a href="/blogs" className="hover:underline">
+                Member blogs
+              </a>
+            </li>
+            <li>
+              <a href="/events" className="hover:underline">
+                Event invites & groups
+              </a>
+            </li>
+            <li>
+              <a href="/#ai" className="hover:underline">
+                AI summaries
+              </a>
+            </li>
+            <li>
+              <a href="/family-tree" className="hover:underline">
+                Interactive family tree
+              </a>
+            </li>
           </ul>
         </div>
         <div>

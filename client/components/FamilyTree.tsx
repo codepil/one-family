@@ -9,7 +9,17 @@ export type Member = {
   children?: Member[];
 };
 
-function TreeNode({ node, depth = 0, selectedId, onSelect }: { node: Member; depth?: number; selectedId?: string; onSelect?: (node: Member) => void; }) {
+function TreeNode({
+  node,
+  depth = 0,
+  selectedId,
+  onSelect,
+}: {
+  node: Member;
+  depth?: number;
+  selectedId?: string;
+  onSelect?: (node: Member) => void;
+}) {
   const [expanded, setExpanded] = useState(true);
   const hasChildren = (node.children?.length ?? 0) > 0;
   const selected = selectedId === node.id;
@@ -35,13 +45,18 @@ function TreeNode({ node, depth = 0, selectedId, onSelect }: { node: Member; dep
         <div>
           <div className="text-sm font-semibold leading-none">{node.name}</div>
           {node.born ? (
-            <div className="text-[11px] text-muted-foreground leading-none mt-1">b. {node.born}</div>
+            <div className="text-[11px] text-muted-foreground leading-none mt-1">
+              b. {node.born}
+            </div>
           ) : null}
         </div>
         {hasChildren ? (
           <button
             className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
-            onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpanded((v) => !v);
+            }}
           >
             {expanded ? "Hide" : "Show"} {node.children!.length}
           </button>
@@ -52,8 +67,14 @@ function TreeNode({ node, depth = 0, selectedId, onSelect }: { node: Member; dep
           <div className="absolute -left-[6px] top-3 size-3 rounded-full bg-muted" />
           <div className="grid gap-4">
             {node.children!.map((child) => (
-              <TreeNode key={child.id} node={child} depth={depth + 1} selectedId={selectedId} onSelect={onSelect} />)
-            )}
+              <TreeNode
+                key={child.id}
+                node={child}
+                depth={depth + 1}
+                selectedId={selectedId}
+                onSelect={onSelect}
+              />
+            ))}
           </div>
         </div>
       ) : null}
@@ -61,36 +82,47 @@ function TreeNode({ node, depth = 0, selectedId, onSelect }: { node: Member; dep
   );
 }
 
-export default function FamilyTree({ data, selectedId, onSelect }: { data?: Member; selectedId?: string; onSelect?: (node: Member) => void; }) {
-  const sample = useMemo<Member>(() => data ?? ({
-    id: "root",
-    name: "Pat & Jordan",
-    born: "1962/1964",
-    children: [
-      {
-        id: "a1",
-        name: "Alex",
-        born: "1987",
+export default function FamilyTree({
+  data,
+  selectedId,
+  onSelect,
+}: {
+  data?: Member;
+  selectedId?: string;
+  onSelect?: (node: Member) => void;
+}) {
+  const sample = useMemo<Member>(
+    () =>
+      data ??
+      ({
+        id: "root",
+        name: "Pat & Jordan",
+        born: "1962/1964",
         children: [
-          { id: "a1a", name: "Maya", born: "2015" },
-          { id: "a1b", name: "Evan", born: "2018" },
+          {
+            id: "a1",
+            name: "Alex",
+            born: "1987",
+            children: [
+              { id: "a1a", name: "Maya", born: "2015" },
+              { id: "a1b", name: "Evan", born: "2018" },
+            ],
+          },
+          {
+            id: "b1",
+            name: "Taylor",
+            born: "1990",
+            children: [{ id: "b1a", name: "Riley", born: "2020" }],
+          },
+          {
+            id: "c1",
+            name: "Casey",
+            born: "1993",
+          },
         ],
-      },
-      {
-        id: "b1",
-        name: "Taylor",
-        born: "1990",
-        children: [
-          { id: "b1a", name: "Riley", born: "2020" },
-        ],
-      },
-      {
-        id: "c1",
-        name: "Casey",
-        born: "1993",
-      },
-    ],
-  } as Member), [data]);
+      } as Member),
+    [data],
+  );
 
   return (
     <div className="w-full overflow-x-auto">

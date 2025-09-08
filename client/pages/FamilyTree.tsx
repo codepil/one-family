@@ -2,11 +2,20 @@ import FamilyTree, { Member } from "@/components/FamilyTree";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 
-function clone<T>(v: T): T { return JSON.parse(JSON.stringify(v)); }
+function clone<T>(v: T): T {
+  return JSON.parse(JSON.stringify(v));
+}
 
-function updateNode(root: Member, id: string, mutator: (node: Member) => void): Member {
+function updateNode(
+  root: Member,
+  id: string,
+  mutator: (node: Member) => void,
+): Member {
   if (root.id === id) {
-    const next = { ...root, children: root.children ? [...root.children] : undefined } as Member;
+    const next = {
+      ...root,
+      children: root.children ? [...root.children] : undefined,
+    } as Member;
     mutator(next);
     return next;
   }
@@ -47,7 +56,11 @@ function insertChild(root: Member, id: string, create: () => Member): Member {
   });
 }
 
-function findParentId(root: Member, id: string, parentId: string | null = null): string | null {
+function findParentId(
+  root: Member,
+  id: string,
+  parentId: string | null = null,
+): string | null {
   if (root.id === id) return parentId;
   for (const c of root.children ?? []) {
     const res = findParentId(c, id, root.id);
@@ -57,31 +70,42 @@ function findParentId(root: Member, id: string, parentId: string | null = null):
 }
 
 export default function FamilyTreePage() {
-  const initial: Member = useMemo(() => ({
-    id: "root",
-    name: "Pat & Jordan",
-    born: "1962/1964",
-    children: [
-      {
-        id: "a1",
-        name: "Alex",
-        born: "1987",
-        children: [
-          { id: "a1a", name: "Maya", born: "2015" },
-          { id: "a1b", name: "Evan", born: "2018" },
-        ],
-      },
-      { id: "b1", name: "Taylor", born: "1990", children: [{ id: "b1a", name: "Riley", born: "2020" }] },
-      { id: "c1", name: "Casey", born: "1993" },
-    ],
-  }), []);
+  const initial: Member = useMemo(
+    () => ({
+      id: "root",
+      name: "Pat & Jordan",
+      born: "1962/1964",
+      children: [
+        {
+          id: "a1",
+          name: "Alex",
+          born: "1987",
+          children: [
+            { id: "a1a", name: "Maya", born: "2015" },
+            { id: "a1b", name: "Evan", born: "2018" },
+          ],
+        },
+        {
+          id: "b1",
+          name: "Taylor",
+          born: "1990",
+          children: [{ id: "b1a", name: "Riley", born: "2020" }],
+        },
+        { id: "c1", name: "Casey", born: "1993" },
+      ],
+    }),
+    [],
+  );
 
   const [tree, setTree] = useState<Member>(initial);
   const [selectedId, setSelectedId] = useState<string>(initial.id);
   const selected = useMemo(() => {
     let found: Member | null = null;
     const walk = (n: Member) => {
-      if (n.id === selectedId) { found = n; return; }
+      if (n.id === selectedId) {
+        found = n;
+        return;
+      }
       for (const c of n.children ?? []) if (!found) walk(c);
     };
     walk(tree);
@@ -98,12 +122,23 @@ export default function FamilyTreePage() {
   const canAddSibling = findParentId(tree, selectedId) !== null;
 
   const saveDetails = () => {
-    setTree((prev) => updateNode(prev, selectedId, (n) => { n.name = name; n.born = born || undefined; }));
+    setTree((prev) =>
+      updateNode(prev, selectedId, (n) => {
+        n.name = name;
+        n.born = born || undefined;
+      }),
+    );
   };
 
   const addChild = () => {
     const id = Math.random().toString(36).slice(2, 8);
-    setTree((prev) => insertChild(prev, selectedId, () => ({ id, name: "New Member", born: undefined })));
+    setTree((prev) =>
+      insertChild(prev, selectedId, () => ({
+        id,
+        name: "New Member",
+        born: undefined,
+      })),
+    );
     setSelectedId(id);
   };
 
@@ -111,7 +146,13 @@ export default function FamilyTreePage() {
     const parentId = findParentId(tree, selectedId);
     if (!parentId) return;
     const id = Math.random().toString(36).slice(2, 8);
-    setTree((prev) => insertSibling(prev, selectedId, () => ({ id, name: "New Sibling", born: undefined })));
+    setTree((prev) =>
+      insertSibling(prev, selectedId, () => ({
+        id,
+        name: "New Sibling",
+        born: undefined,
+      })),
+    );
     setSelectedId(id);
   };
 
@@ -119,10 +160,19 @@ export default function FamilyTreePage() {
     <div className="container py-8">
       <div className="flex flex-col gap-8 md:grid md:grid-cols-[1fr_360px]">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Family Tree</h1>
-          <p className="mt-2 text-muted-foreground">Click a person to edit details. Use the actions to add children or siblings.</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+            Family Tree
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            Click a person to edit details. Use the actions to add children or
+            siblings.
+          </p>
           <div className="mt-6 rounded-xl border bg-card p-4">
-            <FamilyTree data={tree} selectedId={selectedId} onSelect={(n) => setSelectedId(n.id)} />
+            <FamilyTree
+              data={tree}
+              selectedId={selectedId}
+              onSelect={(n) => setSelectedId(n.id)}
+            />
           </div>
         </div>
 
@@ -132,16 +182,34 @@ export default function FamilyTreePage() {
           <div className="mt-4 grid gap-3">
             <label className="grid gap-1">
               <span className="text-xs text-muted-foreground">Name</span>
-              <input className="h-10 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" value={name} onChange={(e)=>setName(e.target.value)} />
+              <input
+                className="h-10 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </label>
             <label className="grid gap-1">
-              <span className="text-xs text-muted-foreground">Born (YYYY or range)</span>
-              <input className="h-10 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" value={born} onChange={(e)=>setBorn(e.target.value)} />
+              <span className="text-xs text-muted-foreground">
+                Born (YYYY or range)
+              </span>
+              <input
+                className="h-10 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                value={born}
+                onChange={(e) => setBorn(e.target.value)}
+              />
             </label>
             <div className="flex gap-2 pt-2">
               <Button onClick={saveDetails}>Save</Button>
-              <Button variant="outline" onClick={addChild}>Add Child</Button>
-              <Button variant="outline" disabled={!canAddSibling} onClick={addSibling}>Add Sibling</Button>
+              <Button variant="outline" onClick={addChild}>
+                Add Child
+              </Button>
+              <Button
+                variant="outline"
+                disabled={!canAddSibling}
+                onClick={addSibling}
+              >
+                Add Sibling
+              </Button>
             </div>
           </div>
         </aside>
