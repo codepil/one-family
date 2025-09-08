@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -15,6 +16,8 @@ type Event = {
   description?: string;
   invites: Invite[];
 };
+
+type Mode = "none" | "edit" | "create";
 
 function statusOf(ev: Event, now = new Date()): "upcoming" | "ongoing" | "past" {
   const s = new Date(ev.start).getTime();
@@ -71,7 +74,8 @@ export default function Events() {
   const [events, setEvents] = useState<Event[]>(SAMPLE_EVENTS);
   const [tab, setTab] = useState<"upcoming" | "ongoing" | "past" | "all">("upcoming");
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string>(events[0].id);
+  const [selectedId, setSelectedId] = useState<string>(SAMPLE_EVENTS[0].id);
+  const [mode, setMode] = useState<Mode>("none");
 
   const filtered = useMemo(() => {
     const list = events.filter((ev) =>
@@ -90,6 +94,30 @@ export default function Events() {
     setEvents((prev) => prev.map((ev) => ev.id === selected.id ? { ...ev, invites: [...ev.invites, { id, name, email, status: "pending" }] } : ev));
   };
 
+  const startCreate = () => {
+    setMode("create");
+  };
+
+  const startEdit = () => {
+    setMode("edit");
+  };
+
+  const cancelEdit = () => setMode("none");
+
+  const saveCreate = (draft: Draft) => {
+    const id = Math.random().toString(36).slice(2, 8);
+    const ev: Event = { id, title: draft.title, start: fromLocalInput(draft.start), end: fromLocalInput(draft.end), location: draft.location, description: draft.description || undefined, invites: [] };
+    setEvents((prev)=> [...prev, ev]);
+    setSelectedId(id);
+    setMode("none");
+  };
+
+  const saveEdit = (draft: Draft) => {
+    if (!selected) return;
+    setEvents((prev)=> prev.map((ev)=> ev.id===selected.id ? { ...ev, title: draft.title, start: fromLocalInput(draft.start), end: fromLocalInput(draft.end), location: draft.location, description: draft.description || undefined } : ev));
+    setMode("none");
+  };
+
   return (
     <div className="container py-8">
       <div className="flex flex-col gap-8 md:grid md:grid-cols-[1fr_360px]">
@@ -99,7 +127,10 @@ export default function Events() {
               <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Events</h1>
               <p className="mt-1 text-muted-foreground">Browse upcoming, ongoing, and past gatherings. Filter and manage invites.</p>
             </div>
-            <Input placeholder="Search by title or location" value={query} onChange={(e)=>setQuery(e.target.value)} className="sm:w-72" />
+            <div className="flex gap-2">
+              <Input placeholder="Search by title or location" value={query} onChange={(e)=>setQuery(e.target.value)} className="sm:w-72" />
+              <Button onClick={startCreate}>New Event</Button>
+            </div>
           </div>
 
           <div className="mt-5">
@@ -114,7 +145,7 @@ export default function Events() {
                 <TabsContent key={key} value={key}>
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {filtered.map((ev)=> (
-                      <EventCard key={ev.id} ev={ev} active={selected?.id===ev.id} onSelect={()=>setSelectedId(ev.id)} />
+                      <EventCard key={ev.id} ev={ev} active={selected?.id===ev.id} onSelect={()=>{ setSelectedId(ev.id); setMode("none"); }} />
                     ))}
                     {filtered.length===0 ? (
                       <div className="col-span-full rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">No events match.</div>
@@ -127,12 +158,35 @@ export default function Events() {
         </div>
 
         <aside className="md:sticky md:top-20 h-max rounded-xl border bg-card p-5 shadow-sm">
-          {selected ? (
+          {mode === "create" ? (
+            <div>
+              <div className="text-sm text-muted-foreground">Create event</div>
+              <EventForm
+                initial={defaultDraft()}
+                onCancel={cancelEdit}
+                onSave={saveCreate}
+              />
+            </div>
+          ) : mode === "edit" && selected ? (
+            <div>
+              <div className="text-sm text-muted-foreground">Edit event</div>
+              <EventForm
+                initial={draftFromEvent(selected)}
+                onCancel={cancelEdit}
+                onSave={saveEdit}
+              />
+            </div>
+          ) : selected ? (
             <div>
               <div className="text-sm text-muted-foreground">Selected event</div>
               <div className="mt-1 text-lg font-semibold">{selected.title}</div>
               <div className="mt-1 text-xs text-muted-foreground">
                 {fmtRange(selected.start, selected.end)} • {selected.location} • <Badge variant="secondary" className="ml-1">{statusOf(selected)}</Badge>
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground">{selected.description}</p>
+
+              <div className="mt-3 flex gap-2">
+                <Button size="sm" onClick={startEdit}>Modify Event</Button>
               </div>
 
               <div className="mt-4">
@@ -197,6 +251,78 @@ function InviteForm({ onAdd }: { onAdd: (name: string, email?: string) => void }
         <Input placeholder="Full name" value={name} onChange={(e)=>setName(e.target.value)} />
         <Input placeholder="Email (optional)" value={email} onChange={(e)=>setEmail(e.target.value)} />
         <Button onClick={submit}>Add Invite</Button>
+      </div>
+    </div>
+  );
+}
+
+// Event form utilities
+
+type Draft = { title: string; start: string; end: string; location: string; description: string };
+
+function toLocalInput(iso: string) {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fromLocalInput(local: string) {
+  const d = new Date(local);
+  return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString();
+}
+
+function draftFromEvent(ev: Event): Draft {
+  return {
+    title: ev.title,
+    start: toLocalInput(ev.start),
+    end: toLocalInput(ev.end),
+    location: ev.location,
+    description: ev.description || "",
+  };
+}
+
+function defaultDraft(): Draft {
+  const now = new Date();
+  now.setMinutes(0,0,0);
+  const in2h = new Date(now.getTime()+2*60*60*1000);
+  return {
+    title: "New Event",
+    start: toLocalInput(now.toISOString()),
+    end: toLocalInput(in2h.toISOString()),
+    location: "",
+    description: "",
+  };
+}
+
+function EventForm({ initial, onCancel, onSave }: { initial: Draft; onCancel: () => void; onSave: (draft: Draft) => void }) {
+  const [draft, setDraft] = useState<Draft>(initial);
+  return (
+    <div className="mt-2 grid gap-2">
+      <label className="grid gap-1">
+        <span className="text-xs text-muted-foreground">Title</span>
+        <Input value={draft.title} onChange={(e)=>setDraft({ ...draft, title: e.target.value })} />
+      </label>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="grid gap-1">
+          <span className="text-xs text-muted-foreground">Start</span>
+          <Input type="datetime-local" value={draft.start} onChange={(e)=>setDraft({ ...draft, start: e.target.value })} />
+        </label>
+        <label className="grid gap-1">
+          <span className="text-xs text-muted-foreground">End</span>
+          <Input type="datetime-local" value={draft.end} onChange={(e)=>setDraft({ ...draft, end: e.target.value })} />
+        </label>
+      </div>
+      <label className="grid gap-1">
+        <span className="text-xs text-muted-foreground">Location</span>
+        <Input value={draft.location} onChange={(e)=>setDraft({ ...draft, location: e.target.value })} />
+      </label>
+      <label className="grid gap-1">
+        <span className="text-xs text-muted-foreground">Description</span>
+        <Textarea rows={4} value={draft.description} onChange={(e)=>setDraft({ ...draft, description: e.target.value })} />
+      </label>
+      <div className="mt-2 flex gap-2">
+        <Button onClick={()=>onSave(draft)}>Save</Button>
+        <Button variant="outline" onClick={onCancel}>Cancel</Button>
       </div>
     </div>
   );
