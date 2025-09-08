@@ -9,9 +9,10 @@ export type Member = {
   children?: Member[];
 };
 
-function TreeNode({ node, depth = 0 }: { node: Member; depth?: number }) {
+function TreeNode({ node, depth = 0, selectedId, onSelect }: { node: Member; depth?: number; selectedId?: string; onSelect?: (node: Member) => void; }) {
   const [expanded, setExpanded] = useState(true);
   const hasChildren = (node.children?.length ?? 0) > 0;
+  const selected = selectedId === node.id;
 
   return (
     <div className="relative">
@@ -19,8 +20,9 @@ function TreeNode({ node, depth = 0 }: { node: Member; depth?: number }) {
         className={cn(
           "group inline-flex items-center gap-2 rounded-md border bg-card px-3 py-2 shadow-sm transition hover:shadow-md",
           depth === 0 && "ring-1 ring-primary/10",
+          selected && "border-primary/60 ring-2 ring-primary/20",
         )}
-        onClick={() => hasChildren && setExpanded((v) => !v)}
+        onClick={() => onSelect?.(node)}
         role="button"
       >
         <div className="size-8 rounded-full bg-gradient-to-tr from-primary to-rose-400 text-white grid place-items-center text-xs font-bold">
@@ -37,9 +39,12 @@ function TreeNode({ node, depth = 0 }: { node: Member; depth?: number }) {
           ) : null}
         </div>
         {hasChildren ? (
-          <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+          <button
+            className="ml-2 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
+            onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
+          >
             {expanded ? "Hide" : "Show"} {node.children!.length}
-          </span>
+          </button>
         ) : null}
       </div>
       {hasChildren && expanded ? (
@@ -47,7 +52,7 @@ function TreeNode({ node, depth = 0 }: { node: Member; depth?: number }) {
           <div className="absolute -left-[6px] top-3 size-3 rounded-full bg-muted" />
           <div className="grid gap-4">
             {node.children!.map((child) => (
-              <TreeNode key={child.id} node={child} depth={depth + 1} />)
+              <TreeNode key={child.id} node={child} depth={depth + 1} selectedId={selectedId} onSelect={onSelect} />)
             )}
           </div>
         </div>
@@ -56,7 +61,7 @@ function TreeNode({ node, depth = 0 }: { node: Member; depth?: number }) {
   );
 }
 
-export default function FamilyTree({ data }: { data?: Member }) {
+export default function FamilyTree({ data, selectedId, onSelect }: { data?: Member; selectedId?: string; onSelect?: (node: Member) => void; }) {
   const sample = useMemo<Member>(() => data ?? ({
     id: "root",
     name: "Pat & Jordan",
@@ -90,7 +95,7 @@ export default function FamilyTree({ data }: { data?: Member }) {
   return (
     <div className="w-full overflow-x-auto">
       <div className="min-w-[560px]">
-        <TreeNode node={sample} />
+        <TreeNode node={sample} selectedId={selectedId} onSelect={onSelect} />
       </div>
     </div>
   );
