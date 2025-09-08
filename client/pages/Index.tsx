@@ -22,7 +22,7 @@ export default function Index() {
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
                 <Button asChild size="lg">
-                  <Link to="/events">Plan an Event</Link>
+                  <Link to="/events">Plan for Event</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline">
                   <Link to="/blogs">Start a Blog</Link>
