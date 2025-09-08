@@ -3,10 +3,10 @@ export default function SiteFooter() {
     <footer className="border-t bg-background">
       <div className="container py-10 grid gap-6 md:grid-cols-3">
         <div>
-          <div className="flex items-center gap-2">
+          <a href="/" className="flex items-center gap-2">
             <div className="h-6 w-6 rounded-md bg-gradient-to-br from-primary to-rose-400" />
             <span className="font-semibold">Kinfolk</span>
-          </div>
+          </a>
           <p className="mt-3 text-sm text-muted-foreground max-w-sm">
             Your private home for stories, events, memories, and the family tree.
           </p>
