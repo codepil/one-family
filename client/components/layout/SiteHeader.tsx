@@ -40,7 +40,9 @@ export default function SiteHeader() {
           <Button asChild variant="outline" size="sm" aria-label="Plan for Event">
             <Link to="/events">Plan for Event</Link>
           </Button>
-          <Button size="sm" className="hidden sm:inline-flex">Join Family</Button>
+          <Button asChild size="sm" className="hidden sm:inline-flex" aria-label="Join Family">
+            <Link to="/family-tree">Join Family</Link>
+          </Button>
         </div>
       </div>
     </header>
