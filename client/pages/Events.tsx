@@ -128,19 +128,23 @@ export default function Events() {
               <p className="mt-1 text-muted-foreground">Browse upcoming, ongoing, and past gatherings. Filter and manage invites.</p>
             </div>
             <div className="flex gap-2">
-              <Input placeholder="Search by title or location" value={query} onChange={(e)=>setQuery(e.target.value)} className="sm:w-72" />
-              <Button onClick={startCreate}>New Event</Button>
+              <Input placeholder="Search by title or location" value={query} onChange={(e)=>setQuery(e.target.value)} className="sm:w-72 rounded-[10px]" />
             </div>
           </div>
 
           <div className="mt-5">
             <Tabs value={tab} onValueChange={(v)=>setTab(v as any)}>
-              <TabsList>
-                <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-                <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
-                <TabsTrigger value="past">Past</TabsTrigger>
-                <TabsTrigger value="all">All</TabsTrigger>
-              </TabsList>
+              <div className="grid gap-5 md:grid-cols-2 items-center">
+                <TabsList>
+                  <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+                  <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
+                  <TabsTrigger value="past">Past</TabsTrigger>
+                  <TabsTrigger value="all">All</TabsTrigger>
+                </TabsList>
+                <div className="flex md:justify-end">
+                  <Button onClick={startCreate} className="rounded-[10px] h-10 px-4">New Event</Button>
+                </div>
+              </div>
               {["upcoming","ongoing","past","all"].map((key)=> (
                 <TabsContent key={key} value={key}>
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
