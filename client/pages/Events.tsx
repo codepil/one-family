@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Plus } from "lucide-react";
 
 type Invite = { id: string; name: string; email?: string; status: "pending" | "accepted" | "declined" };
 
@@ -142,7 +143,10 @@ export default function Events() {
                   <TabsTrigger value="all">All</TabsTrigger>
                 </TabsList>
                 <div className="flex md:justify-end">
-                  <Button onClick={startCreate} className="rounded-[10px] h-10 px-4">New Event</Button>
+                  <Button onClick={startCreate} className="h-10 w-10 rounded-full p-0" aria-label="New Event" title="New Event">
+                    <Plus className="h-5 w-5" />
+                    <span className="sr-only">New Event</span>
+                  </Button>
                 </div>
               </div>
               {["upcoming","ongoing","past","all"].map((key)=> (
