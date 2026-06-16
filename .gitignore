@@ -24,4 +24,9 @@ dist-ssr
 *.sw?
 
 .config/
-!.env
+.env
+.env.local
+.env.*.local
+
+# Supabase CLI local state — contains project ref, DB URL, org ID
+supabase/.temp/
