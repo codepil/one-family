@@ -39,7 +39,7 @@ export default function Index() {
                 Private by default • Invite only
               </div>
               <h1 className="mt-4 text-4xl md:text-6xl font-extrabold tracking-tight">
-                Your family's home for stories, events, and the family tree
+                Your family's home for stories and events together
               </h1>
               <p className="mt-4 text-lg text-muted-foreground">
                 Write blog posts together, plan gatherings, share photos, and
@@ -128,7 +128,7 @@ export default function Index() {
         <div className="grid gap-8 md:grid-cols-2">
           <div>
             <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-              Smart summaries of family activity
+              Summary of family activity
             </h2>
             <p className="mt-2 text-muted-foreground">
               Paste recent posts or updates to preview how the AI summarizes
