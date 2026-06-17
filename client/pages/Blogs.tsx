@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,19 @@ import {
   callEdgeFunction,
 } from "@/lib/supabase";
 import { format } from "date-fns";
+
+function isVideoUrl(url: string) {
+  return /\.(mp4|mov|webm|ogg)(\?|$)/i.test(url);
+}
+
+function MediaPreview({ url, className }: { url: string; className: string }) {
+  return isVideoUrl(url) ? (
+    <video src={url} controls className={className} />
+  ) : (
+    <img src={url} alt="" className={className} />
+  );
+}
+
 import {
   Select,
   SelectContent,
@@ -254,11 +267,7 @@ export default function Blogs() {
                 ))}
               </div>
               {selected.image_url && (
-                <img
-                  src={selected.image_url}
-                  alt=""
-                  className="mt-3 w-full rounded-lg object-cover max-h-40"
-                />
+                <MediaPreview url={selected.image_url} className="mt-3 w-full rounded-lg object-cover max-h-40" />
               )}
               <p className="mt-3 text-sm text-muted-foreground whitespace-pre-wrap">
                 {selected.content}
@@ -301,11 +310,7 @@ function PostCard({
       className={`text-left rounded-xl border bg-card p-4 shadow-sm transition hover:shadow-md ${active ? "ring-2 ring-primary/30" : ""}`}
     >
       {post.image_url && (
-        <img
-          src={post.image_url}
-          alt=""
-          className="w-full h-28 object-cover rounded-lg mb-3"
-        />
+        <MediaPreview url={post.image_url} className="w-full h-28 object-cover rounded-lg mb-3" />
       )}
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -371,6 +376,7 @@ function PostForm({
   const [selectedEventId, setSelectedEventId] = useState(post?.event_id ?? "");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState(post?.image_url ?? "");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
@@ -378,6 +384,13 @@ function PostForm({
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    const maxMB = file.type.startsWith("video/") ? 40 : 10;
+    if (file.size > maxMB * 1024 * 1024) {
+      setError(`File too large — max ${maxMB}MB for ${file.type.startsWith("video/") ? "videos" : "images"}. Try compressing it first.`);
+      e.target.value = "";
+      return;
+    }
+    setError("");
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   }
@@ -387,16 +400,21 @@ function PostForm({
     setGenerating(true);
     setError("");
     try {
+      // Only upload images for vision — skip videos (too large + not supported by vision API)
       let uploadedUrl: string | null = null;
-      if (imageFile) {
+      if (imageFile && !imageFile.type.startsWith("video/")) {
         uploadedUrl = await uploadImage(imageFile, familyId);
         setImagePreview(uploadedUrl);
         setImageFile(null);
       }
       const { description } = await callEdgeFunction("generate-description", {
         title,
+        content: content.trim() || null,
         imageUrl: uploadedUrl,
         hashtags: parseTags(tags),
+        eventId: selectedEventId || null,
+        authorId,
+        familyId,
       });
       setContent(description);
     } catch (e: any) {
@@ -453,27 +471,37 @@ function PostForm({
         </label>
       )}
 
-      {/* Image */}
-      <label className="grid gap-1">
-        <span className="text-xs text-muted-foreground">Image (optional)</span>
-        <div
-          className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-primary transition"
-          onClick={() => document.getElementById("blog-img-input")?.click()}
-        >
+      {/* Photo / Video */}
+      <div className="grid gap-1">
+        <span className="text-xs text-muted-foreground">Photo or Video (optional)</span>
+        <label className="block border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-primary transition">
           {imagePreview ? (
-            <img src={imagePreview} alt="" className="max-h-28 mx-auto rounded-md object-contain" />
+            imageFile?.type.startsWith("video/") || isVideoUrl(imagePreview) ? (
+              <video src={imagePreview} className="max-h-28 mx-auto rounded-md pointer-events-none" />
+            ) : (
+              <img src={imagePreview} alt="" className="max-h-28 mx-auto rounded-md object-contain" />
+            )
           ) : (
-            <span className="text-xs text-muted-foreground">Click to upload a photo</span>
+            <span className="text-xs text-muted-foreground">Click to upload a photo or video</span>
           )}
-        </div>
-        <input
-          id="blog-img-input"
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleFile}
-        />
-      </label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            className="sr-only"
+            onChange={handleFile}
+          />
+        </label>
+        {imagePreview && (
+          <button
+            type="button"
+            className="text-xs text-muted-foreground hover:text-destructive text-right"
+            onClick={() => { setImagePreview(""); setImageFile(null); }}
+          >
+            Remove
+          </button>
+        )}
+      </div>
 
       {/* Title */}
       <label className="grid gap-1">
