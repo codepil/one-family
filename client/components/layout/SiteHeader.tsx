@@ -23,6 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEvent } from "@/contexts/EventContext";
 import { LogOut, PenSquare, CalendarPlus } from "lucide-react";
 import FamilyMenu from "./FamilyMenu";
+import { useFamily } from "@/contexts/FamilyContext";
 
 function AuthModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { signInWithGoogle, signInWithEmail } = useAuth();
@@ -138,6 +139,7 @@ export default function SiteHeader() {
   const location = useLocation();
   const { session, profile, signOut, authModalOpen, openAuthModal, closeAuthModal } = useAuth();
   const { activeEvents, endEvent } = useEvent();
+  const { activeFamily } = useFamily();
   const [showCreateEvent, setShowCreateEvent] = useState(false);
 
   const avatar = profile?.avatar_url || session?.user?.user_metadata?.picture || session?.user?.user_metadata?.avatar_url;
@@ -159,6 +161,11 @@ export default function SiteHeader() {
             <img src="/logo.svg" alt="Family Vibes" className="h-10 w-10 rounded-lg" />
             <span className="font-extrabold tracking-tight text-xl">Family Vibes</span>
           </Link>
+          {session && activeFamily && (
+            <span className="hidden sm:inline-flex items-center gap-1 ml-2 px-3 py-1 rounded-full text-sm font-semibold bg-gradient-to-r from-rose-100 via-pink-100 to-red-100 text-rose-700 border border-rose-200 shadow-sm">
+              ❤️ {activeFamily.name}
+            </span>
+          )}
 
           <nav className="hidden md:flex items-center gap-6">
             {nav.map((item) => (

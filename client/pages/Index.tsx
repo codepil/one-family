@@ -4,8 +4,12 @@ import { Button } from "@/components/ui/button";
 import AISummary from "@/components/AISummary";
 import FamilyTree from "@/components/FamilyTree";
 import { Badge } from "@/components/ui/badge";
-import { fetchUpdates } from "@/lib/supabase";
+import { CalendarPlus } from "lucide-react";
+import { fetchUpdates, fetchFamilyTree } from "@/lib/supabase";
+import { useMemo } from "react";
 import { useEvent } from "@/contexts/EventContext";
+import { useFamily } from "@/contexts/FamilyContext";
+import { type Member } from "@/components/FamilyTree";
 import { format } from "date-fns";
 
 type Update = {
@@ -20,19 +24,52 @@ type Update = {
 };
 
 export default function Index() {
-  const { activeEvents } = useEvent();
+  const { activeEvents, loading: eventsLoading } = useEvent();
+  const { activeFamilyId } = useFamily();
   const [recentPosts, setRecentPosts] = useState<Update[]>([]);
+  const [postsLoaded, setPostsLoaded] = useState(false);
+  const [treeData, setTreeData] = useState<Member | undefined>(undefined);
 
   useEffect(() => {
-    fetchUpdates({ limit: 100 }).then((data) => setRecentPosts(data ?? []));
-  }, []);
+    setPostsLoaded(false);
+    fetchUpdates({ limit: 100, familyId: activeFamilyId })
+      .then((data) => setRecentPosts(data ?? []))
+      .finally(() => setPostsLoaded(true));
+  }, [activeFamilyId]);
+
+  useEffect(() => {
+    if (!activeFamilyId) { setTreeData(undefined); return; }
+    fetchFamilyTree(activeFamilyId).then((data) => setTreeData(data as Member ?? undefined));
+  }, [activeFamilyId]);
+
+  const aiSnapshot = useMemo(() => {
+    const photoCount = recentPosts.filter((p) => p.image_url).length;
+    const storyCount = recentPosts.length;
+    const eventCount = activeEvents.length;
+    const hasTree = !!treeData;
+    const parts: string[] = [];
+
+    if (eventCount > 0)
+      parts.push(`${eventCount} active event${eventCount > 1 ? "s" : ""} happening now.`);
+    if (storyCount > 0)
+      parts.push(`${storyCount} stor${storyCount > 1 ? "ies" : "y"} shared by your family.`);
+    if (photoCount > 0)
+      parts.push(`${photoCount} photo${photoCount > 1 ? "s" : ""} captured so far.`);
+    if (hasTree)
+      parts.push("Family tree is growing.");
+
+    if (parts.length === 0)
+      return "Your family space is ready! Start by adding a story, planning an event, or building your family tree — every memory begins with a first step. 🌱";
+
+    return parts.join(" ");
+  }, [recentPosts, activeEvents, treeData]);
 
   return (
     <div>
       {/* Hero */}
-      <section className="relative overflow-hidden border-b">
+      <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(60%_60%_at_50%_0%,hsl(var(--primary)/0.15),transparent_60%)]" />
-        <div className="container relative py-20 md:py-28">
+        <div className="container relative py-12 md:py-16">
           <div className="grid items-center gap-10 md:grid-cols-2">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs text-muted-foreground">
@@ -68,16 +105,15 @@ export default function Index() {
                         AI Snapshot
                       </div>
                       <p className="mt-0.5 text-sm leading-snug line-clamp-3">
-                        Reunion picnic planned for June 14. 18 RSVPs. New posts
-                        from Alex and Taylor. 42 photos added to "Grandma 80th".
+                        {aiSnapshot}
                       </p>
                     </div>
                     {/* Stats */}
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { t: "Blogs", v: recentPosts.length > 0 ? `${recentPosts.length}+` : "—" },
-                        { t: "Events", v: activeEvents.length > 0 ? activeEvents.length.toString() : "—" },
-                        { t: "Photos", v: recentPosts.filter((p) => p.image_url).length.toString() },
+                        { t: "Stories", v: postsLoaded ? `${recentPosts.length}` : "—" },
+                        { t: "Events", v: !eventsLoading ? `${activeEvents.length}` : "—" },
+                        { t: "Photos", v: postsLoaded ? `${recentPosts.filter((p) => p.image_url).length}` : "—" },
                       ].map((m) => (
                         <div key={m.t} className="rounded-lg border bg-background p-2.5">
                           <div className="text-xs text-muted-foreground">{m.t}</div>
@@ -91,7 +127,7 @@ export default function Index() {
                         Family Tree
                       </div>
                       <div className="max-h-44 overflow-hidden">
-                        <FamilyTree />
+                        <FamilyTree data={treeData} />
                       </div>
                     </div>
                   </div>
@@ -102,45 +138,23 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Feature cards */}
-      <section className="container py-12 md:py-16">
-        <div className="grid gap-6 md:grid-cols-3">
-          <FeatureCard
-            title="Member Blogs"
-            desc="Any family member can write, tag, and share posts. Keep memories in one place."
-            link="/blogs"
-          />
-          <FeatureCard
-            title="Events & Groups"
-            desc="Plan events, invite members, and create event groups to chat and share media."
-            link="/events"
-          />
-          <FeatureCard
-            title="AI Summaries"
-            desc="Automatic highlights from posts and events. See what's new at a glance."
-            link="#ai"
-          />
-        </div>
-      </section>
-
       {/* AI Summary + Upcoming Events */}
-      <section id="ai" className="container pb-16">
+      <section id="ai" className="container pt-6 pb-12 md:pb-16">
         <div className="grid gap-8 md:grid-cols-2">
           <div>
             <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight">
               Summary of family activity
             </h2>
             <p className="mt-2 text-muted-foreground">
-              Paste recent posts or updates to preview how the AI summarizes
-              highlights. Server-side integration can be added later.
+              Auto-generated from your family's recent stories and events.
             </p>
             <div className="mt-6">
-              <AISummary />
+              <AISummary posts={recentPosts} eventCount={activeEvents.length} familyId={activeFamilyId} />
             </div>
           </div>
           <div className="rounded-2xl border bg-card p-6">
             <h3 className="font-semibold">
-              {activeEvents.length > 0 ? "Active Events" : "Upcoming Events"}
+              {activeEvents.length > 0 ? "Active Events" : "Events"}
             </h3>
             <div className="mt-4 grid gap-4">
               {activeEvents.length > 0 ? (
@@ -160,32 +174,38 @@ export default function Index() {
                   </div>
                 ))
               ) : (
-                <>
-                  {[
-                    { title: "June Picnic", date: "Sat, Jun 14", where: "Maple Park", attendees: 18 },
-                    { title: "Holiday Dinner", date: "Dec 24", where: "Grandma's House", attendees: 26 },
-                  ].map((e) => (
-                    <div key={e.title} className="rounded-xl border bg-background p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">{e.title}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {e.date} • {e.where}
-                          </div>
-                        </div>
-                        <div className="text-xs rounded-full bg-muted px-3 py-1 text-muted-foreground">
-                          {e.attendees} going
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </>
+                <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                  <CalendarPlus className="h-8 w-8 mb-2 opacity-30" />
+                  <p className="text-sm">No active events yet.</p>
+                  <p className="text-xs mt-1">Plan one for your family!</p>
+                </div>
               )}
             </div>
             <Button asChild className="mt-6 w-full">
               <Link to="/events">Open Events</Link>
             </Button>
           </div>
+        </div>
+      </section>
+
+      {/* Feature cards */}
+      <section className="container pb-16">
+        <div className="grid gap-6 md:grid-cols-3">
+          <FeatureCard
+            title="Member Blogs"
+            desc="Any family member can write, tag, and share posts. Keep memories in one place."
+            link="/blogs"
+          />
+          <FeatureCard
+            title="Events & Groups"
+            desc="Plan events, invite members, and create event groups to chat and share media."
+            link="/events"
+          />
+          <FeatureCard
+            title="AI Summaries"
+            desc="Automatic highlights from posts and events. See what's new at a glance."
+            link="#ai"
+          />
         </div>
       </section>
     </div>
